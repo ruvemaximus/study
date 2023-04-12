@@ -1,18 +1,18 @@
-const express = require('express');
+import express, { json } from 'express';
 
-const users = require('./users/app');
-const db = require('./db');
+import users from './users/app.js';
+import SQLiteManager from './db/sqlite_manager.cjs';
 
 const app = express();
 
-app.use(express.json());
+app.use(json());
 
 // Конфигурация сервера
-const ipAddr = '127.0.0.1';
+const ipAddr = '0.0.0.0';
 const port = 3000
 
 app.get('/', (req, res) => {
-    res.send('Hello, world');
+    res.send('Привет! Это сервер для игры в SET');
 })
 
 // Подключаем приложения 
@@ -21,6 +21,8 @@ app.use('/users', users);
 
 app.listen(port, () => {
     console.log('Настройка базы данных');
-    db.init();
+    const manager = new SQLiteManager();
+    manager.createTables();
+
     console.log(`Игровой сервер доступен по адресу: http://${ipAddr}:${port}`)
 })
