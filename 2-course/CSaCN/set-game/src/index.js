@@ -20,9 +20,12 @@ app.use('/users', users);
 
 
 app.listen(port, () => {
-    console.log('Настройка базы данных');
     const manager = new SQLiteManager();
-    manager.createTables();
+    try {
+        manager.init();
+    } catch (error) {
+        console.log('Ошибка инициализации базы данных: ', error)
+    }
 
     console.log(`Игровой сервер доступен по адресу: http://${ipAddr}:${port}`)
 })

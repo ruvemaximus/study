@@ -1,10 +1,20 @@
 import { Router } from 'express';
 import { getUser, createUser } from './model.js';
+import { generateToken, tokenExpired } from '../utils/session.js';
 
 const router = Router();
 
 router.get('/', (req, res) => {
+    console.log(tokenExpired(""));
+    const auth = req.headers.authorization;
+
+    
+    if (!auth) {
+        return res.status(401).send('Отсутствует токен авторизации');
+    }
+
     return res.send('Welcome to User page!');
+    
 });
 
 router.get('/:user_id', (req, res) => {
@@ -21,7 +31,7 @@ router.post('/', (req, res) => {
     }
 
     createUser(user, (user) => {
-        res.status(201).json(user);
+        return res.status(201).json(user);
     });
 });
 

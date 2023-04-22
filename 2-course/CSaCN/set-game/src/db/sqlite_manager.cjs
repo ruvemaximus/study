@@ -6,13 +6,17 @@ class SQLiteManager {
         this.db = new sqlite3.Database(dbPath);
     }
 
-    createTables() {
+    init() {
         const sql = `
         CREATE TABLE IF NOT EXISTS Users(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
             password TEXT NOT NULL
-        );`
+        ); CREATE TABLE IF NOT EXISTS Sessions(
+            user_id INT FOREIGN KEY(Users.id),
+            token TEXT,
+            expired_at TEXT
+        )`;
         this.db.run(sql);
     }
 
