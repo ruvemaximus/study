@@ -1,17 +1,20 @@
 import { Router } from 'express';
 import { getUser, createUser } from './model.js';
-import { generateToken, tokenExpired } from '../utils/session.js';
+import { createSession, tokenExpired } from '../utils/session.js';
+import SQLiteManager from "../db/sqlite_manager.cjs";
 
 const router = Router();
 
 router.get('/', (req, res) => {
-    console.log(tokenExpired(""));
     const auth = req.headers.authorization;
+    const manager = new SQLiteManager();
 
-    
     if (!auth) {
         return res.status(401).send('Отсутствует токен авторизации');
     }
+    manager.get("SELECT user_id FROM Sessions WHERE token=?", [auth], (err, user) =>{
+        console.log(user);
+    });
 
     return res.send('Welcome to User page!');
     
@@ -31,7 +34,8 @@ router.post('/', (req, res) => {
     }
 
     createUser(user, (user) => {
-        return res.status(201).json(user);
+        const token = createSession(user.user_id);
+        return res.status(201).json({'user_id': user.user_id, 'token': token});
     });
 });
 

@@ -13,11 +13,10 @@ class SQLiteManager {
             username TEXT NOT NULL,
             password TEXT NOT NULL
         ); CREATE TABLE IF NOT EXISTS Sessions(
-            user_id INT FOREIGN KEY(Users.id),
-            token TEXT,
-            expired_at TEXT
+            user_id INT,
+            token TEXT
         )`;
-        this.db.run(sql);
+        this.db.exec(sql);
     }
 
     get(...args) { this.db.get(...args); }

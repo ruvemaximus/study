@@ -1,11 +1,11 @@
-import express, { json } from 'express';
+import express from 'express';
 
 import users from './users/app.js';
 import SQLiteManager from './db/sqlite_manager.cjs';
 
 const app = express();
 
-app.use(json());
+app.use(express.json());
 
 // Конфигурация сервера
 const ipAddr = '0.0.0.0';
@@ -23,9 +23,9 @@ app.listen(port, () => {
     const manager = new SQLiteManager();
     try {
         manager.init();
+        console.log(`Игровой сервер доступен по адресу: http://${ipAddr}:${port}`)
     } catch (error) {
         console.log('Ошибка инициализации базы данных: ', error)
     }
 
-    console.log(`Игровой сервер доступен по адресу: http://${ipAddr}:${port}`)
 })

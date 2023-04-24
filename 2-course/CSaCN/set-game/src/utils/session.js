@@ -2,7 +2,8 @@ import SQLiteManager from "../db/sqlite_manager.cjs";
 
 export function tokenExpired(token) {
     const manager = new SQLiteManager();
-    const res = manager.get('SELECT * WHERE token=?', [token]);
+    const res = manager.get('SELECT * FROM Sessions WHERE token=?', [token]);
+
     console.log(res);
 }
 
@@ -22,5 +23,6 @@ export function createSession(user_id) {
     const token = generateToken();
     const manager = new SQLiteManager();
 
-    manager.run('INSRT INTO Sessions() VALUES(?, ?, ?)', [])
+    manager.run('INSERT INTO Sessions(user_id, token) VALUES(?, ?)', [user_id, token]);
+    return token;
 }
