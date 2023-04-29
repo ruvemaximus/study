@@ -1,12 +1,18 @@
-import SQLiteManager from "../db/sqlite_manager.cjs";
+import SQLiteManager from "../db/db_manager.cjs";
 
-export function getUser(user_id, fn) {
+
+export function getUser({id}, response_func) {
     const manager = new SQLiteManager();
-    manager.get("SELECT `id`, `username` FROM `Users` WHERE `id`=?", [user_id], (err, row) => {
+
+    const sql = 'SELECT id, username FROM Users WHERE id=?';
+    const params = [id];
+
+    manager.get(sql, params, (err, row) => {
         if (err) throw err;
-        return fn(row);
+        return response_func(row);
     });
 }
+
 export function createUser(user, fn) {
     const manager = new SQLiteManager();
     manager.run('INSERT INTO Users(`username`,`password`) VALUES(?,?)',

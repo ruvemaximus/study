@@ -1,42 +1,80 @@
 import { Router } from 'express';
-import { getUser, createUser } from './model.js';
-import { createSession, tokenExpired } from '../utils/session.js';
-import SQLiteManager from "../db/sqlite_manager.cjs";
+import auth from './auth.js';
+
+import DBManager from "../db/db_manager.cjs";
+import {getUser } from './model.js';
+
 
 const router = Router();
+const manager = new DBManager();
+
 
 router.get('/', (req, res) => {
-    const auth = req.headers.authorization;
-    const manager = new SQLiteManager();
-
-    if (!auth) {
-        return res.status(401).send('Отсутствует токен авторизации');
-    }
-    manager.get("SELECT user_id FROM Sessions WHERE token=?", [auth], (err, user) =>{
-        console.log(user);
+    manager.db.all('SELECT id, username FROM Users', (err, users) => {
+        return res.status(200).json(users);
     });
-
-    return res.send('Welcome to User page!');
-    
 });
+
+
+router.get('/me', (req, res) => {
+    const user = auth(req.headers);
+    return res.json({a: 1});
+});
+
 
 router.get('/:user_id', (req, res) => {
-    return getUser(req.params.user_id, (user) => {
-        res.status(200).json(user);
+    getUser({id: req.params.user_id}, (user) => {
+        if (user === undefined){
+            return res.status(404).json({
+                detail: 'User not found'
+            });
+        }
+
+        return res.status(200).json({
+            'id':  user.id,
+            'username': user.username
+        });
     });
 });
+
 
 router.post('/', (req, res) => {
-    const user = req.body;
+    if (!req.body.username || !req.body.password) {
+        let undefinedFields = [];
 
-    if (!user.username || !user.password) {
-        return res.status(400).send('Неверный запрос на регистрацию пользователя');
+        for (const expectedField of ['username', 'password']) {
+            if (req.body[expectedField] === undefined) {
+                undefinedFields.push(expectedField);
+            }
+        }
+        const requiredFields = undefinedFields.join(', ');
+
+        return res
+            .status(400)
+            .send(`Fields expected: [${requiredFields}]`);
     }
 
-    createUser(user, (user) => {
-        const token = createSession(user.user_id);
-        return res.status(201).json({'user_id': user.user_id, 'token': token});
+    const sql = 'INSERT INTO Users(username, password) VALUES(?,?)';
+    const params = [req.body.username, req.body.password];
+
+    manager.db.run(sql, params, (err) => {
+        if (err) throw err;
+    });
+
+    manager.db.get('SELECT last_insert_rowid() as user_id', (err, row) => {
+        return res.status(201).json({'id': row.user_id});
     });
 });
 
-export default router
+
+router.delete('/:user_id', (req, res) => {
+    const sql = 'DELETE FROM Users WHERE id=?';
+    const params = req.params.user_id;
+
+    manager.db.run(sql, params, (err) => {
+        if (err) throw err;
+        return res.status(200).json({message: `Deleted ${req.params.user_id}`});
+    });
+});
+
+export default router;

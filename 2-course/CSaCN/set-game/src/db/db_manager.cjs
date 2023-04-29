@@ -1,21 +1,21 @@
 const sqlite3 = require('sqlite3')
 
 
-class SQLiteManager {
+class DBManager {
     constructor(dbPath='./db.sqlite3') {
         this.db = new sqlite3.Database(dbPath);
     }
 
-    init() {
+    generateSchemas() {
         const sql = `
         CREATE TABLE IF NOT EXISTS Users(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
             password TEXT NOT NULL
-        ); CREATE TABLE IF NOT EXISTS Sessions(
-            user_id INT,
-            token TEXT
-        )`;
+        ); CREATE TABLE IF NOT EXISTS Tokens(
+            token TEXT PRIMARY KEY,
+            user_id INT
+        );`;
         this.db.exec(sql);
     }
 
@@ -24,4 +24,4 @@ class SQLiteManager {
 }
 
 
-module.exports = SQLiteManager
+module.exports = DBManager
