@@ -1,7 +1,9 @@
 import express from 'express';
 
 import users from './users/app.js';
+import games from './games/app.js';
 import DBManager from './db/db_manager.cjs';
+import { SuccessResponse } from './core/response_models.js';
 
 
 const app = express();
@@ -14,20 +16,19 @@ const PORT = 3000;
 
 
 app.get('/', (req, res) => {
-    return res.status(200).json(
-        {message: 'Server working'}
-    );
+    return res.status(200).json(new SuccessResponse('Server working!'));
 })
 
 
 // Подключаем приложения 
 app.use('/users', users);
+app.use('/games', games);
 
 
 app.listen(PORT, () => {
     const manager = new DBManager();
 
     manager.generateSchemas();
-    console.log(`Start server at: http://${IP_ADDR}:${PORT}`);
+    console.log(`Server started at: http://${IP_ADDR}:${PORT}`);
 
 })

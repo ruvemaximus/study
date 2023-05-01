@@ -15,8 +15,18 @@ class DBManager {
         ); CREATE TABLE IF NOT EXISTS Tokens(
             token TEXT PRIMARY KEY,
             user_id INT
-        );`;
-        this.db.exec(sql);
+        ); CREATE TABLE IF NOT EXISTS Games(
+            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+            finished INTEGER
+        ); CREATE TABLE IF NOT EXISTS GameUsers(
+            game_id INT NOT NULL,
+            user_id INT NOT NULL
+        )`;
+        this.db.exec(sql, (err) => {
+            if (err) {
+                console.error('Creating tables failed: ' + err.message);
+            }
+        });
     }
 
     get(...args) { this.db.get(...args); }

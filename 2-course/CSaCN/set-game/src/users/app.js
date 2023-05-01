@@ -2,7 +2,8 @@ import { Router } from 'express';
 import auth from './auth.js';
 
 import DBManager from "../db/db_manager.cjs";
-import {getUser } from './model.js';
+import { getUser } from './model.js';
+import {SuccessResponse, ErrorResponse} from '../core/response_models.js';
 
 
 const router = Router();
@@ -40,18 +41,10 @@ router.get('/:user_id', (req, res) => {
 
 router.post('/', (req, res) => {
     if (!req.body.username || !req.body.password) {
-        let undefinedFields = [];
+        const expectedFields = ['username', 'password'];
+        const undefinedFields = expectedFields.filter(field => req.body[field] === undefined);
 
-        for (const expectedField of ['username', 'password']) {
-            if (req.body[expectedField] === undefined) {
-                undefinedFields.push(expectedField);
-            }
-        }
-        const requiredFields = undefinedFields.join(', ');
-
-        return res
-            .status(400)
-            .send(`Fields expected: [${requiredFields}]`);
+        return res.status(422).json(new ErrorResponse(`Fields expected: ${undefinedFields.join(', ')}`));
     }
 
     const sql = 'INSERT INTO Users(username, password) VALUES(?,?)';
