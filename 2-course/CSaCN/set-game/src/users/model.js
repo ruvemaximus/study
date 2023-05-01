@@ -1,24 +1,44 @@
-import SQLiteManager from "../db/db_manager.cjs";
+import { generateToken } from '../utils/token.js';
+import DBManager from "../db/db_manager.cjs";
+
+const manager = new DBManager();
 
 
-export function getUser({id}, response_func) {
-    const manager = new SQLiteManager();
+export class Users {
+    constructor(id, username, state) {
+        this.id = id;
+        this.username = username;
+        this.state = state;
+    }
 
-    const sql = 'SELECT id, username FROM Users WHERE id=?';
-    const params = [id];
+    static async get(id) {
+        return manager.get('SELECT id, username, state FROM Users WHERE id=?', [id])
+            .then(user => new Users(user.id, user.username, user.state))
+    }
 
-    manager.get(sql, params, (err, row) => {
-        if (err) throw err;
-        return response_func(row);
-    });
+    async join() {
+        return;
+    }
+
+    async leave() {
+        return;
+    }
 }
 
-export function createUser(user, fn) {
-    const manager = new SQLiteManager();
-    manager.run('INSERT INTO Users(`username`,`password`) VALUES(?,?)',
-        [user.username, user.password], (err) => {
-            if (err) throw err;
-            manager.get("SELECT last_insert_rowid() as user_id", (err, user) => fn(user));
-        }
-    );
+export async function getUser(id) {
+    return manager.get('SELECT id, username, state FROM Users WHERE id=?', [id])
+        .then(user => user)
+        .catch(error => { throw error; });
+}
+
+
+export async function getAllUsers() {
+    return manager.all('SELECT id, username, state FROM Users')
+        .then(users => users);
+}
+
+export async function createUser(username, password) {
+    const token = generateToken();
+    manager.run('INSERT INTO Users (username, password, token) VALUES(?,?,?)', [username, password, token]);
+    return {token: token};
 }

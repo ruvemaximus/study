@@ -1,4 +1,4 @@
-const sqlite3 = require('sqlite3')
+const sqlite3 = require('sqlite3');
 
 
 class DBManager {
@@ -11,13 +11,12 @@ class DBManager {
         CREATE TABLE IF NOT EXISTS Users(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
-            password TEXT NOT NULL
-        ); CREATE TABLE IF NOT EXISTS Tokens(
-            token TEXT PRIMARY KEY,
-            user_id INT
+            password TEXT NOT NULL,
+            token TEXT NOT NULL UNIQUE,
+            state TEXT DEFAULT NULL
         ); CREATE TABLE IF NOT EXISTS Games(
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            finished INTEGER
+            finished INTEGER DEFAULT 0
         ); CREATE TABLE IF NOT EXISTS GameUsers(
             game_id INT NOT NULL,
             user_id INT NOT NULL
@@ -29,8 +28,33 @@ class DBManager {
         });
     }
 
-    get(...args) { this.db.get(...args); }
-    run(...args) { this.db.run(...args); }
+    get(sql, params) {
+        return new Promise((resolve, reject) => {
+            this.db.get(sql, params, (err, row) => {
+                if (err) { reject(err) }
+                resolve(row);
+            });
+        });
+    }
+
+    all(sql, params) {
+        return new Promise((resolve, reject) => {
+            this.db.all(sql, params, (err, rows) => {
+                if (err) { reject(err) }
+                resolve(rows);
+            });
+        });
+    }
+
+    run(sql, params) {
+        return new Promise((resolve, reject) => {
+            this.db.run(sql, params, function (err) {
+                if (err) { reject(err) }
+                resolve({ id: this.lastID })
+            });
+        });
+    }
+
 }
 
 

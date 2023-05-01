@@ -1,27 +1,25 @@
 import DBManager from "../db/db_manager.cjs";
 
-function auth(headers) {
-    const manager = new DBManager();
 
-    if (headers.authorization === undefined) {
-        return false;
+export async function login(req, res) {
+    const manager = new DBManager();
+    const bearerToken = req.headers.authorization;
+
+    if (bearerToken === undefined) {
+        return res.status(401).json({detail: 'Expected token'});
     }
 
-    const sql = 'SELECT user_id FROM Tokens WHERE token=?';
-    const params = headers.authorization;
+    const [prefix, token] = bearerToken.split(' ');
 
-    manager.db.get(sql, params, (err, row) => {
-        console.log(row);
-    });
-    return true;
+    if (prefix !== 'Bearer') {
+        return res.status(401).json({detail: 'Wrong bearer token format'});
+    }
+
+    const user = await manager.get('SELECT id FROM Users WHERE token=?', [token]).then(user => user);
+
+    if (user === undefined) {
+        return res.status(401).json({detail: 'Wrong token'});
+    }
+
+    return user;
 }
-
-function _generateToken(user_id) {
-    const manager = new DBManager();
-
-    manager.db.run('INSERT INTO Tokens(user_id, token) VALUES(?,?)' [user_id, token], (err) => {
-        
-    });
-}
-
-export default auth;

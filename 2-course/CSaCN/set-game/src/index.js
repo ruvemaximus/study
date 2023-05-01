@@ -6,21 +6,16 @@ import DBManager from './db/db_manager.cjs';
 import { SuccessResponse } from './core/response_models.js';
 
 
-const app = express();
-
-app.use(express.json());
-
-// Конфигурация сервера
 const IP_ADDR = '127.0.0.1';
 const PORT = 3000;
 
+const app = express();
 
 app.get('/', (req, res) => {
     return res.status(200).json(new SuccessResponse('Server working!'));
 })
 
-
-// Подключаем приложения 
+app.use(express.json());
 app.use('/users', users);
 app.use('/games', games);
 
