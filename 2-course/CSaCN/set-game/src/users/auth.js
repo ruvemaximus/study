@@ -1,8 +1,7 @@
-import DBManager from "../db/db_manager.cjs";
+import { Users } from "./model.js";
 
 
-export async function login(req, res) {
-    const manager = new DBManager();
+export const login = async function (req, res, next) {
     const bearerToken = req.headers.authorization;
 
     if (bearerToken === undefined) {
@@ -15,11 +14,12 @@ export async function login(req, res) {
         return res.status(401).json({detail: 'Wrong bearer token format'});
     }
 
-    const user = await manager.get('SELECT id FROM Users WHERE token=?', [token]).then(user => user);
+    const user = await Users.getByToken(token);
 
     if (user === undefined) {
         return res.status(401).json({detail: 'Wrong token'});
     }
 
-    return user;
+    req.user = user;
+    next();
 }

@@ -1,8 +1,9 @@
 import express from 'express';
 
-import { SuccessResponse, ErrorResponse } from '../core/response_models.js';
+import { SuccessResponse, ErrorResponse } from '../core/responses.js';
 import { login } from '../users/auth.js';
-import { Games, joinGame } from './model.js';
+import { Users } from '../users/model.js';
+import { Games } from './model.js';
 
 
 const router = express.Router();
@@ -21,21 +22,20 @@ router.post('/', async (req, res) => {
 });
 
 
-router.get('/:game_id', async (req, res) => {
-    const game = await Games.get(req.params.game_id);
-    if (game === undefined) {
-        return res.status(404).json(new ErrorResponse('Game not found!'));
-    }
+router.route('/:game_id')
+    .get(async function (req, res) {
+        const game = await Games.get(req.params.game_id);
+        if (game === undefined) {
+            return res.sendStatus(404);
+        }
 
-    return res.status(200).json(game);
-});
-
-
-router.delete('/:game_id', async (req, res) => {
-    const game_id = req.params.game_id;
-    await Games.delete(game_id);
-    return res.status(200).json(new SuccessResponse(`Game deleted: ${game_id}`));
-});
+        return res.status(200).json(game);
+    })
+    .delete(async function (req, res) {
+        const game_id = req.params.game_id;
+        await Games.delete(game_id);
+        return res.status(200).json(new SuccessResponse(`Game deleted: ${game_id}`));
+    })
 
 
 router.put('/:game_id/finish', async (req, res) => {
@@ -46,13 +46,12 @@ router.put('/:game_id/finish', async (req, res) => {
 });
 
 
-router.post('/:game_id/join', async (req, res) => {
-    const user = await login(req, res);
+router.post('/:game_id/join', login, async (req, res) => {
     const game = await Games.get(req.params.game_id);
+    const user = req.user.id;
 
-    await joinGame(user, game);
-
-    return res.status(200).json(new SuccessResponse('Game joined successfully'));
+    await user.join(game);
+    return res.sendStatus(200);
 });
 
 

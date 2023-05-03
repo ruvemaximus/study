@@ -3,7 +3,7 @@ import express from 'express';
 import users from './users/app.js';
 import games from './games/app.js';
 import DBManager from './db/db_manager.cjs';
-import { SuccessResponse } from './core/response_models.js';
+import { SuccessResponse } from './core/responses.js';
 
 
 const IP_ADDR = '127.0.0.1';
