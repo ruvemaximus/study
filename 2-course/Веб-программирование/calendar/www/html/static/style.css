@@ -1,0 +1,101 @@
+body {
+  margin: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background-color: #e6f2ff;
+  color: #333;
+}
+
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+tr:hover {
+  background-color: #cce6ff;
+}
+
+form {
+  width: 300px;
+  margin: 0 auto;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+}
+
+select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+}
+
+button {
+  background-color: #008CBA;
+  color: #fff;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #005b7f;
+}
+
+.tag-panel { 
+  display: flex;
+  flex-direction: row;
+}
+
+a.tag { 
+  color: #212121;
+  text-decoration: none;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 0 5px;
+  background-color: #efefef;
+  border: 1px solid #efefef;
+}
+
+a.tag.active { 
+  background-color: #005b7f;
+  color: #fff;
+}
+
+.btn { 
+  display: inline-block;
+  position: relative;
+  padding: 10px;
+  color: white;
+  text-decoration: none;
+  background-color: #005b7f;
+  border-radius: 10px;
+  font-weight: bold;
+}

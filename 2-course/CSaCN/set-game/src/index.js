@@ -25,5 +25,4 @@ app.listen(PORT, () => {
 
     manager.generateSchemas();
     console.log(`Server started at: http://${IP_ADDR}:${PORT}`);
-
 })
