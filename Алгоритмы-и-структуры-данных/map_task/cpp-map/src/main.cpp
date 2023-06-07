@@ -4,12 +4,12 @@
 #include <chrono>
 
 
-using namespace std;
-
 int main() 
 { 
     const int TARGET_MAP_SIZE = 10'000'000;
-    std::ofstream output("performance_results.csv");
+    std::ofstream output("./results/cpp_map.csv");
+
+    output << "Количество элементов,Время выполнения (мкс),Объем памяти (байт)" << std::endl;
 
     for (int i = 1; i <= TARGET_MAP_SIZE; i*=10) 
     {
@@ -23,7 +23,7 @@ int main()
         auto end = std::chrono::steady_clock::now();
 
         auto time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-        output << i << ", " << float(time)/10'000'000 << ", " << m.size() * sizeof(int) * 2 << std::endl;
+        output << i << ',' << float(time) << ',' << m.size() * sizeof(int) * 2 << std::endl;
     }
 
     output.close();
