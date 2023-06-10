@@ -1,3 +1,15 @@
+UNAME := $(shell uname)
+
+ifeq ($(UNAME), Linux)
+	PYTHON="python3"
+	TARGET="main"
+	PYPATH="./venv/bin/python"
+else
+	PYTHON="python"
+	TARGET="main.exe"
+	PYPATH="./venv/Scripts/python"
+endif
+
 all: run
 
 run: build run-python run-cpp draw
@@ -6,21 +18,21 @@ build: build-python build-cpp
 
 build-python: 
 	@echo "--- BUILDING PYTHON ---"
-	python -m venv venv
-	./venv/Scripts/python -m pip install -r requirements.txt --quiet --disable-pip-version-check
+	$(PYTHON) -m venv venv
+	$(PYPATH) -m pip install -r requirements.txt --quiet --disable-pip-version-check
 
 run-python:
 	@echo "--- RUNNING PYTHON ---"
-	./venv/Scripts/python ./python-dict/main.py
+	$(PYPATH) ./python-dict/main.py
 
 build-cpp:
 	@echo "--- BUILDING C++ ---"
-	g++ ./cpp-map/src/main.cpp -o ./cpp-map/build/main.exe
+	g++ ./cpp-map/src/main.cpp -o ./cpp-map/build/$(TARGET)
 
 run-cpp:
 	@echo "--- RUNNING C++ ---"
-	./cpp-map/build/main.exe
+	./cpp-map/build/$(TARGET)
 
 draw: build-python
 	@echo "--- DRAWING ---"
-	./venv/Scripts/python ./draw.py
+	$(PYPATH) ./draw.py

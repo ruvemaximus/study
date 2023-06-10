@@ -60,5 +60,5 @@ plt.xlabel('Кол-во элементов')
 plt.ylabel('Память (байты)')
 plt.title('Python Память от количества')
 
-
+plt.savefig('./results/plots.png')
 plt.show()
