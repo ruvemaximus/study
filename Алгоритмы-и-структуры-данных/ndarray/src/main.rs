@@ -10,6 +10,9 @@ enum FillType {
     RANDOM
 }
 
+enum Direction { COLUMN, ROW, ALL }
+enum Algorithm { AVG, MIN, MAX }
+
 struct NDArray { 
     content: Vec<number::Number>,
     schema: Vec<usize>, // определяет как будет разделяться матрица
@@ -94,6 +97,73 @@ impl NDArray {
 
         arr
     }
+
+    fn mean(&self, dir: Direction, alg: Algorithm) -> Vec<number::Number> { 
+        let mut arr = NDArray::new(FillType::EMPTY, self.schema.clone());
+
+        let max = |row: &[number::Number]| -> number::Number { 
+            match row.iter().max() {
+                Some(val) => *val,
+                None => panic!("Ошибка работы")
+            }
+        };
+
+        let min = |row: &[number::Number]| -> number::Number { 
+            match row.iter().min() {
+                Some(val) => *val,
+                None => panic!("Ошибка работы")
+            }
+        };
+
+        match dir { 
+            Direction::ALL => match alg {
+                Algorithm::MIN => arr.content.push(min(&self.content)),
+                Algorithm::MAX => arr.content.push(max(&self.content)),
+                Algorithm::AVG => arr.content = [number::Number::Float((number::sum(self.content.clone()) / self.content.len()) as f32)].to_vec()
+            },
+            Direction::ROW => match alg {
+                Algorithm::MIN => {
+                    let a: Vec<&[number::Number]> = self.content.chunks(self.schema[1]).collect();
+                    for row in a { arr.content.push(min(row)) }
+                },
+                Algorithm::MAX => {
+                    let a: Vec<&[number::Number]> = self.content.chunks(self.schema[1]).collect();
+                    for row in a { arr.content.push(max(row)) }
+                }, 
+                Algorithm::AVG => {
+                    let a: Vec<&[number::Number]> = self.content.chunks(self.schema[1]).collect();
+                    for row in a {
+                        arr.content.push(number::Number::Float((number::sum(row.to_vec()) / row.len()) as f32));
+                    }
+                }
+            },
+            Direction::COLUMN => match alg {
+                Algorithm::MIN => {
+                    let transposed = self.transpose();
+                    let a: Vec<&[number::Number]> = transposed.content.chunks(self.schema[1]).collect();
+                    for row in a {
+                        match row.iter().min() { 
+                            Some(val) => arr.content.push(*val),
+                            None => panic!("НЕвозможно")
+                        };
+                    }
+                },
+                Algorithm::MAX => {
+                    let transposed = self.transpose();
+                    let a: Vec<&[number::Number]> = transposed.content.chunks(self.schema[1]).collect();
+                    for row in a { arr.content.push(max(row))}
+                }, 
+                Algorithm::AVG => {
+                    let transposed = self.transpose();
+                    let a: Vec<&[number::Number]> = transposed.content.chunks(self.schema[1]).collect();
+                    for row in a {
+                        arr.content.push(number::Number::Float((number::sum(row.to_vec()) / row.len()) as f32));
+                    }
+                }
+            },
+        }
+        arr.content
+    }
 }
 
 impl std::fmt::Display for NDArray {
@@ -173,4 +243,13 @@ fn main() {
     println!("{}", b);
     println!("=");
     println!("{}", a.dot(b));
+
+    println!("--- СОКРАЩЕНИЕ МАТРИЦ ---");
+    let a = NDArray::new(FillType::RANDOM, vec![2, 2]);
+    println!("{}", a);
+    println!("Общий минимум: {:?}", a.mean(Direction::ALL, Algorithm::MIN));
+    println!("Максимум по колонкам: {:?}", a.mean(Direction::COLUMN, Algorithm::MAX));
+    println!("Минимум в строках: {:?}", a.mean(Direction::ROW, Algorithm::MIN));
+    println!("Стредняя по строкам: {:?}", a.mean(Direction::ROW, Algorithm::AVG));
+    
 }
