@@ -1,0 +1,1 @@
+/home/nikita/study/Алгоритмы-и-структуры-данных/ndarray/target/debug/ndarray: /home/nikita/study/Алгоритмы-и-структуры-данных/ndarray/src/main.rs /home/nikita/study/Алгоритмы-и-структуры-данных/ndarray/src/number.rs
