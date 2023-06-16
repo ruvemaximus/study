@@ -1,5 +1,4 @@
 use std::cmp::Ordering;
-use std::iter::Sum;
 use std::ops::{Add, Sub, Mul, Div};
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
@@ -10,22 +9,21 @@ pub enum Number {
 
 impl Ord for Number {
     fn cmp(&self, other: &Self) -> Ordering {
+        let make_cmp = |a: f32, b: f32| -> Ordering {
+            match a > b {
+                true => Ordering::Greater,
+                false => Ordering::Less
+            }
+        };
+
         match self {
             Number::Float(a) => match other {
-                Number::Float(b) => {
-                    if a > b { Ordering::Greater } else { Ordering::Less }
-                },
-                Number::Int(b) => {
-                    if *a > *b as f32 { Ordering::Greater } else { Ordering::Less }
-                }
+                Number::Float(b) => make_cmp(*a, *b),
+                Number::Int(b) => make_cmp(*a, *b as f32)
             },
             Number::Int(a) => match other {
-                Number::Float(b) => {
-                    if *a as f32 > *b { Ordering::Greater } else { Ordering::Less }
-                },
-                Number::Int(b) => {
-                    if a > b { Ordering::Greater } else { Ordering::Less }
-                }
+                Number::Float(b) => make_cmp(*a as f32, *b), 
+                Number::Int(b) => make_cmp(*a as f32, *b as f32)
             },
         }
         

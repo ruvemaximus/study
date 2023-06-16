@@ -13,6 +13,7 @@ enum FillType {
 enum Direction { COLUMN, ROW, ALL }
 enum Algorithm { AVG, MIN, MAX }
 
+#[derive(Clone)]
 struct NDArray { 
     content: Vec<number::Number>,
     schema: Vec<usize>, // определяет как будет разделяться матрица
@@ -99,8 +100,6 @@ impl NDArray {
     }
 
     fn mean(&self, dir: Direction, alg: Algorithm) -> Vec<number::Number> { 
-        let mut arr = NDArray::new(FillType::EMPTY, self.schema.clone());
-
         let max = |row: &[number::Number]| -> number::Number { 
             match row.iter().max() {
                 Some(val) => *val,
@@ -115,54 +114,30 @@ impl NDArray {
             }
         };
 
-        match dir { 
-            Direction::ALL => match alg {
-                Algorithm::MIN => arr.content.push(min(&self.content)),
-                Algorithm::MAX => arr.content.push(max(&self.content)),
-                Algorithm::AVG => arr.content = [number::Number::Float((number::sum(self.content.clone()) / self.content.len()) as f32)].to_vec()
-            },
-            Direction::ROW => match alg {
-                Algorithm::MIN => {
-                    let a: Vec<&[number::Number]> = self.content.chunks(self.schema[1]).collect();
-                    for row in a { arr.content.push(min(row)) }
-                },
-                Algorithm::MAX => {
-                    let a: Vec<&[number::Number]> = self.content.chunks(self.schema[1]).collect();
-                    for row in a { arr.content.push(max(row)) }
-                }, 
-                Algorithm::AVG => {
-                    let a: Vec<&[number::Number]> = self.content.chunks(self.schema[1]).collect();
-                    for row in a {
-                        arr.content.push(number::Number::Float((number::sum(row.to_vec()) / row.len()) as f32));
-                    }
-                }
-            },
-            Direction::COLUMN => match alg {
-                Algorithm::MIN => {
-                    let transposed = self.transpose();
-                    let a: Vec<&[number::Number]> = transposed.content.chunks(self.schema[1]).collect();
-                    for row in a {
-                        match row.iter().min() { 
-                            Some(val) => arr.content.push(*val),
-                            None => panic!("НЕвозможно")
-                        };
-                    }
-                },
-                Algorithm::MAX => {
-                    let transposed = self.transpose();
-                    let a: Vec<&[number::Number]> = transposed.content.chunks(self.schema[1]).collect();
-                    for row in a { arr.content.push(max(row))}
-                }, 
-                Algorithm::AVG => {
-                    let transposed = self.transpose();
-                    let a: Vec<&[number::Number]> = transposed.content.chunks(self.schema[1]).collect();
-                    for row in a {
-                        arr.content.push(number::Number::Float((number::sum(row.to_vec()) / row.len()) as f32));
-                    }
-                }
-            },
+        let avg = | row: &[number::Number] | -> number::Number {
+            number::Number::Float((number::sum(row.to_vec()) / row.len()) as f32)
+        };
+
+        let calc = |ndarray: NDArray, alg: fn(&[number::Number]) -> number::Number| -> Vec<number::Number> {
+            let matrix: Vec<&[number::Number]> = ndarray.content.chunks(ndarray.schema[1]).collect();
+            let mut result = Vec::<number::Number>::with_capacity(matrix.len());
+            for row in matrix { result.push(alg(row)); }
+            result 
+        };
+
+        let func: fn(&[number::Number]) -> number::Number;
+
+        match alg {
+            Algorithm::MIN => func = min,
+            Algorithm::MAX => func = max,
+            Algorithm::AVG => func = avg
         }
-        arr.content
+
+        match dir { 
+            Direction::ALL => [func(&self.content)].to_vec(),
+            Direction::ROW => calc(self.clone(), func),
+            Direction::COLUMN => calc(self.transpose(), func),
+        }
     }
 }
 
