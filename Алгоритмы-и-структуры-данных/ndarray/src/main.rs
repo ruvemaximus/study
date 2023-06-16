@@ -15,6 +15,16 @@ struct NDArray {
     schema: Vec<usize>, // определяет как будет разделяться матрица
 }
 
+fn calc_cell(row: Vec<number::Number>, col: Vec<number::Number>) -> number::Number {
+    let mut result = number::Number::Int(1);
+    for (a, b) in zip(row, col) {
+        print!("{} * {} + ", a, b);
+        result = result + a*b;
+    }
+    println!("0");
+    result
+}
+
 
 impl NDArray {
     fn new(fill_type: FillType, schema: Vec<usize>) -> Self {
@@ -28,8 +38,8 @@ impl NDArray {
             FillType::RANDOM => {
                 let mut arr = NDArray { content: Vec::with_capacity(content_size), schema};
                 for _ in 0..content_size {
-                    let num = rng.gen_range(0f32..=100f32);
-                    arr.content.push(number::Number::Float(num));
+                    let num = rng.gen_range(0f32..=100f32) as i32;
+                    arr.content.push(number::Number::Int(num));
                 }
                 arr
             }
@@ -69,8 +79,20 @@ impl NDArray {
         arr
     }
 
-    fn matrix_mul() {
+    fn dot(&self, b: NDArray) -> NDArray {
+        let mut arr = NDArray::new(FillType::EMPTY, vec![self.schema[0], b.schema[1]]);
+        let transposed_arr = b.transpose();
 
+        for i in 0..arr.schema[0] {
+            for j in 0..arr.schema[1] {
+                let a: Vec<&[number::Number]> = self.content.chunks(self.schema[1]).collect();
+                let b: Vec<&[number::Number]> = transposed_arr.content.chunks(b.schema[0]).collect();
+
+                arr.content.push(calc_cell(a[i].to_vec(), b[j].to_vec()));
+            }
+        }
+
+        arr
     }
 }
 
@@ -82,18 +104,18 @@ impl std::fmt::Display for NDArray {
 }
 
 fn calc_ndarray(operation: number::Operation, left: NDArray, right: NDArray) -> NDArray{ 
-        let mut arr = NDArray::new(FillType::ZEROS, left.schema);
+    let mut arr = NDArray::new(FillType::ZEROS, left.schema);
 
-        for (item, (a, b)) in zip(arr.content.iter_mut(), zip(left.content, right.content)) {
-            match operation {
-                number::Operation::ADD => *item = a + b,
-                number::Operation::SUB => *item = a - b,
-                number::Operation::MUL => *item = a * b,
-                number::Operation::DIV => *item = a / b
-            }
+    for (item, (a, b)) in zip(arr.content.iter_mut(), zip(left.content, right.content)) {
+        match operation {
+            number::Operation::ADD => *item = a + b,
+            number::Operation::SUB => *item = a - b,
+            number::Operation::MUL => *item = a * b,
+            number::Operation::DIV => *item = a / b
         }
+    }
 
-        arr
+    arr
 }
 
 impl std::ops::Add for NDArray { 
@@ -122,20 +144,33 @@ impl std::ops::Div for NDArray {
 }
 
 fn main() {
+    println!("--- СОЗДАНИЕ МАССИВА ---");
     let mut zeros_ndarray = NDArray::new(FillType::ZEROS, vec![1, 2]);
     println!("Массив заполненный нулями: {}", zeros_ndarray);
     zeros_ndarray.resize(vec![2, 1]);
 
     println!("Массив с измененным размером: {}", zeros_ndarray);
 
+    println!("--- СУММА МАССИВОВ --- ");
     let a = NDArray::new(FillType::ONES, vec![2, 2]);
     let b = NDArray::new(FillType::RANDOM, vec![2, 2]);
 
     println!("{} + {}", a, b);
     println!("{}", a + b);
 
+    println!("--- ТРАНСПОНИРОВАНИЕ ---");
     let arr_before_transpose = NDArray::new(FillType::RANDOM, vec![2, 3]);
     println!("До транспонирования: {}", arr_before_transpose);
     let arr_after_transpose = arr_before_transpose.transpose();
     println!("После транспонирования: {}", arr_after_transpose);
+
+    println!("--- МАТРИЧНОЕ УМНОЖЕНИЕ ---");
+    let a = NDArray::new(FillType::RANDOM, vec![1, 2]);
+    let b = NDArray::new(FillType::RANDOM, vec![2, 1]);
+
+    println!("{}", a);
+    println!("*");
+    println!("{}", b);
+    println!("=");
+    println!("{}", a.dot(b));
 }
