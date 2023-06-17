@@ -112,11 +112,9 @@ impl std::fmt::Display for Number {
 
 impl Eq for Number { }
 
-pub fn sum(arr: Vec<Number>) ->  usize { 
+pub fn sum(arr: &[Number]) ->  usize { 
     let mut a = Number::Int(0);
-    for i in arr.iter() {
-        a = a + *i;
-    }
+    for i in arr.iter() { a = a + *i; }
     match a {
         Number::Float(a) => a as usize,
         Number::Int(a) => a as usize

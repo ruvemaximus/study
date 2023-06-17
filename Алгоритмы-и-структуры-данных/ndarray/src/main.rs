@@ -19,11 +19,11 @@ struct NDArray {
     schema: Vec<usize>, // определяет как будет разделяться матрица
 }
 
-fn calc_cell(row: Vec<number::Number>, col: Vec<number::Number>) -> number::Number {
+fn calc_cell(row: &[number::Number], col: &[number::Number]) -> number::Number {
     let mut result = number::Number::Int(1);
     for (a, b) in zip(row, col) {
         print!("{} * {} + ", a, b);
-        result = result + a*b;
+        result = result + *a * *b;
     }
     println!("0");
     result
@@ -83,16 +83,16 @@ impl NDArray {
         arr
     }
 
-    fn dot(&self, b: NDArray) -> NDArray {
-        let mut arr = NDArray::new(FillType::EMPTY, vec![self.schema[0], b.schema[1]]);
-        let transposed_arr = b.transpose();
+    fn dot(&self, other: NDArray) -> NDArray {
+        let mut arr = NDArray::new(FillType::EMPTY, vec![self.schema[0], other.schema[1]]);
+        let transposed_arr = other.transpose();
 
-        for i in 0..arr.schema[0] {
-            for j in 0..arr.schema[1] {
-                let a: Vec<&[number::Number]> = self.content.chunks(self.schema[1]).collect();
-                let b: Vec<&[number::Number]> = transposed_arr.content.chunks(b.schema[0]).collect();
+        let rows_slice: Vec<&[number::Number]> = self.content.chunks(self.schema[1]).collect();
+        let cols_slice: Vec<&[number::Number]> = transposed_arr.content.chunks(other.schema[0]).collect();
 
-                arr.content.push(calc_cell(a[i].to_vec(), b[j].to_vec()));
+        for row in &rows_slice {
+            for col in &cols_slice {
+                arr.content.push(calc_cell(row, col));
             }
         }
 
@@ -115,7 +115,7 @@ impl NDArray {
         };
 
         let avg = | row: &[number::Number] | -> number::Number {
-            number::Number::Float((number::sum(row.to_vec()) / row.len()) as f32)
+            number::Number::Float((number::sum(row) / row.len()) as f32)
         };
 
         let calc = |ndarray: NDArray, alg: fn(&[number::Number]) -> number::Number| -> Vec<number::Number> {
@@ -151,13 +151,22 @@ impl std::fmt::Display for NDArray {
 fn calc_ndarray(operation: number::Operation, left: NDArray, right: NDArray) -> NDArray{ 
     let mut arr = NDArray::new(FillType::ZEROS, left.schema);
 
+    let add = |a: number::Number, b: number::Number| -> number::Number { a + b };
+    let mul = |a: number::Number, b: number::Number| -> number::Number { a * b };
+    let sub = |a: number::Number, b: number::Number| -> number::Number { a - b };
+    let div = |a: number::Number, b: number::Number| -> number::Number { a / b };
+
+    let op: fn(a: number::Number, b: number::Number) -> number::Number;
+
+    match operation {
+        number::Operation::ADD => op = add,
+        number::Operation::SUB => op = sub,
+        number::Operation::MUL => op = mul,
+        number::Operation::DIV => op = div
+    }
+
     for (item, (a, b)) in zip(arr.content.iter_mut(), zip(left.content, right.content)) {
-        match operation {
-            number::Operation::ADD => *item = a + b,
-            number::Operation::SUB => *item = a - b,
-            number::Operation::MUL => *item = a * b,
-            number::Operation::DIV => *item = a / b
-        }
+        *item = op(a, b);
     }
 
     arr
@@ -227,4 +236,6 @@ fn main() {
     println!("Минимум в строках: {:?}", a.mean(Direction::ROW, Algorithm::MIN));
     println!("Стредняя по строкам: {:?}", a.mean(Direction::ROW, Algorithm::AVG));
     
+    println!("--- Попытка сделать срезы ---");
+    // let slices:  = a.content.chunks(3).collect();
 }
