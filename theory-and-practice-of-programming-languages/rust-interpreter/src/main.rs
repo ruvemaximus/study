@@ -1,8 +1,7 @@
-mod lexer;
+mod parser;
+
 
 fn main() {
-    let code = "12+2".to_string();
-    let tokens = lexer::lexer(&code);
-
-    dbg!(tokens);
+    parser::parse(&"2+2");
+    println!("Hello Rust!");
 }
