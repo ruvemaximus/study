@@ -1,9 +1,7 @@
 mod lexer {
-    use std::str::Chars;
-
-
+    #[derive(Debug)]
     pub enum Token {
-        Int(i8),
+        Int(i32),
         Mul,
         Div,
         Plus,
@@ -12,35 +10,67 @@ mod lexer {
         CloseParen,
     }
 
-    fn number(chars: &mut Chars, value: u32) -> Option<Token> {
-        let mut number = Token::Int(value as i8);
-
-        while let Some(digit) = chars.next()?.to_digit(10) {
-            
-        } 
-
-        Token::Int(10);
-
-        Some(number)
+    pub struct Lexer { 
+        pub chars: Vec<char>,
+        pos: usize,
     }
 
-    pub fn next_token(chars: &mut Chars) -> Token {
-        let c = chars.next().unwrap();
-        match c {
-            '0'..='9' => number(chars, c.to_digit(10).unwrap()).unwrap(),
-            '*' => Token::Mul,
-            '-' => Token::Minus,
-            '+' => Token::Plus,
-            '/' => Token::Div,
-            '(' => Token::OpenParen,
-            ')' => Token::CloseParen,
-             _ => panic!("Unable to parse token!")
+    impl Lexer { 
+        pub fn new(chars: Vec<char>) -> Self {
+            Self {
+                chars,
+                pos: 0
+            }
+        }
+
+        pub fn next_token(&mut self) -> Option<Token> {
+            let mut ch: char = *self.chars.get(self.pos)?;
+
+            let token = match ch {
+                '0'..='9' => {
+                    let mut number = ch.to_digit(10)? as i32;
+
+                    loop {
+                        ch = match self.chars.get(self.pos + 1) {
+                            Some(ch) => *ch,
+                            None => break Token::Int(number)
+                        };
+
+                        match ch {
+                            '0'..='9' => {
+                                let digit = ch.to_digit(10)? as i32;
+                                number = number * 10 + digit;
+                                self.pos += 1;
+                            },
+                            _ => break Token::Int(number)
+                        }
+                    }
+                },
+                '*' => Token::Mul,
+                '-' => Token::Minus,
+                '+' => Token::Plus,
+                '/' => Token::Div,
+                '(' => Token::OpenParen,
+                ')' => Token::CloseParen,
+                ' ' => {
+                    self.pos += 1;
+                    return self.next_token()
+                },
+                _ => panic!("Unable to parse token!")
+            };
+
+            self.pos += 1;
+
+            Some(token)
         }
     }
 }
 
 
 pub fn parse(code: &str) {
-    let mut chars = code.chars();
-    lexer::next_token(&mut chars);
+    let mut lexer = lexer::Lexer::new(Vec::from_iter(code.chars()));
+
+    dbg!(lexer.next_token());
+    dbg!(lexer.next_token());
+    dbg!(lexer.next_token());
 }
