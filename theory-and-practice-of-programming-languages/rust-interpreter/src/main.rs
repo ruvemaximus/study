@@ -2,5 +2,5 @@ mod parser;
 
 
 fn main() {
-    parser::Parser::parse(&" 123 + 456");
+    dbg!(parser::Parser::parse(&" 123 + 456"));
 }
