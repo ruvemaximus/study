@@ -1,13 +1,13 @@
 #[path = "lexer.rs"]
 mod lexer;
 
-use lexer::{Token, TokenType};
+use lexer::{Token, TokenType, Lexer};
 
 
 #[derive(Debug)]
 pub enum ASTNode {
     Number(i32),
-    BinOp { left: Box<Self>, op: Token, right: Box<Self> }
+    BinOp { left: Box<Self>, op: String, right: Box<Self> }
 }
 
 pub struct Parser {
@@ -16,83 +16,102 @@ pub struct Parser {
 }
 
 
+#[allow(unused_variables, dead_code)]
 impl Parser {
+    pub fn new(code: &str) -> Self {
+        let mut lexer = Lexer::new(&code);
+        let current_token = lexer.next_token();
+
+        Self { current_token, lexer }
+    }
+
     fn check_token(&mut self, expected: TokenType) {
         if let Some(token) = &self.current_token {
             if token._type != expected {
-                panic!("Произошло что-то страшное...")
+                panic!("[grammar] Ожидался токен {expected:?}, получен {token:?}")
             }
-            self.current_token = self.lexer.next_token();
+            self.step()
         }
     }
 
-    fn match_token(&mut self, expected_values: &[String]) -> bool {
-        if let Some(Token { value, _type }) = &self.current_token {
-            *_type == TokenType::Operator && expected_values.contains(&value)
-        } else {
-            false
-        }
+    fn step(&mut self) {
+        self.current_token = self.lexer.next_token();
     }
 
     fn fact(&mut self) -> Option<ASTNode> {
-        if let Some(Token { value, _type }) = &self.current_token {
-            let node = match _type {
-                TokenType::Number => ASTNode::Number(value.parse::<i32>().unwrap()),
-                TokenType::LParen => {
-                    self.check_token(TokenType::LParen);
-                    let result = self.expr();
-                    self.check_token(TokenType::RParen);
-                    return result;
+        if let Some(Token { _type: t, value: v }) = &self.current_token.clone() {
+            let node = match t {
+                TokenType::Number => {
+                    self.step();
+                    ASTNode::Number(v.parse().unwrap())
                 },
-                _ => panic!("АА ЧТО ПРОИСХОДИТ!")
+                TokenType::LParen => todo!(),
+                _ => panic!("[grammar] Неожиданный токен {t:?} '{v}'!")
             };
-            Some(node)
-        } else { None }
+
+            return Some(node);
+        }
+        None
     }
 
     fn term(&mut self) -> Option<ASTNode> {
-        let result = self.fact().unwrap();
-        let expected_values = &['*', '/'].map(|ch| String::from(ch));
+        let mut result = self.fact()?;
 
-        while self.match_token(expected_values) {
-            if let Some(token) = &self.current_token.clone() {
-                self.check_token(TokenType::Operator);
-                return Some(ASTNode::BinOp {
-                    left: Box::new(result),
-                    op: token.clone(),
-                    right: Box::new(self.fact().unwrap()) 
-                })
+        while let Some(token) = self.current_token.clone() {
+            if !['*', '/'].map(|c| String::from(c)).contains(&token.value) {
+                break;
             }
-        }
 
+            if token._type != TokenType::Operator {
+                break;
+            }
+
+            self.step();
+
+            result = ASTNode::BinOp { 
+                left: Box::new(self.term()?), 
+                op: token.value, 
+                right: Box::new(result)
+            };
+        }
         Some(result)
     }
-
 
     fn expr(&mut self) -> Option<ASTNode> {
-        let mut result = self.term().unwrap();
-        let expected_values = &['+', '-'].map(|ch| String::from(ch));
+        let mut result = self.term()?;
 
-        while self.match_token(expected_values) {
-            let token = &self.current_token.clone().unwrap();
-            self.check_token(TokenType::Operator);
-            result = ASTNode::BinOp { 
-                left: Box::new(result), 
-                op: token.clone(), 
-                right: Box::new(self.term().unwrap())
+        while let Some(token) = self.current_token.clone() {
+            dbg!(&token);
+            if !['+', '-'].map(|c| String::from(c)).contains(&token.value) {
+                break;
             }
+
+            if token._type != TokenType::Operator {
+                break;
+            }
+
+            self.step();
+
+            result = ASTNode::BinOp { 
+                left: Box::new(self.expr()?), 
+                op: token.value, 
+                right: Box::new(result)
+            };
         }
+
         Some(result)
     }
 
-    pub fn parse(code: &str) -> ASTNode {
-        let mut lexer = lexer::Lexer::new(&code);
-        let current_token = lexer.next_token();
-
-        let mut parser = Self { current_token, lexer };
-
-        parser.expr().unwrap()
+    pub fn parse(&mut self) -> Option<ASTNode> {
+        self.expr()
     }
+}
+
+
+#[test]
+fn fact() {
+    let _parser = Parser::new(&"2+2+2");
+    assert_eq!(1, 1);
 }
 
 

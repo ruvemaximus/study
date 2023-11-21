@@ -2,5 +2,6 @@ mod parser;
 
 
 fn main() {
-    dbg!(parser::Parser::parse(&" 123 + 456"));
+    let mut parser = parser::Parser::new(&"2+2*2");
+    dbg!(parser.parse());
 }
