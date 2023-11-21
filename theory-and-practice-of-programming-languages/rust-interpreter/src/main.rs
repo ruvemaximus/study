@@ -1,7 +1,7 @@
-mod parser;
+mod interpreter;
 
 
 fn main() {
-    let mut parser = parser::Parser::new(&"2+2*2");
-    dbg!(parser.parse());
+    let code = "(2+2)*2";
+    println!("{code}={}", interpreter::eval(&code));
 }

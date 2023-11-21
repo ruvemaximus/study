@@ -56,7 +56,7 @@ impl Lexer {
                 self.pos += 1;
                 return self.next_token()
             },
-            _ => panic!("Unable to parse token {} at {}!", ch, self.pos)
+            _ => panic!("[lexer] Неизвестный символ '{ch}' на позиции {}!", self.pos)
         };
 
         self.pos += 1;

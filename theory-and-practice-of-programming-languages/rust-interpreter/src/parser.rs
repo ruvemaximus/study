@@ -16,7 +16,6 @@ pub struct Parser {
 }
 
 
-#[allow(unused_variables, dead_code)]
 impl Parser {
     pub fn new(code: &str) -> Self {
         let mut lexer = Lexer::new(&code);
@@ -45,7 +44,12 @@ impl Parser {
                     self.step();
                     ASTNode::Number(v.parse().unwrap())
                 },
-                TokenType::LParen => todo!(),
+                TokenType::LParen => {
+                    self.check_token(TokenType::LParen);
+                    let expression = self.expr()?;
+                    self.check_token(TokenType::RParen);
+                    expression
+                },
                 _ => panic!("[grammar] Неожиданный токен {t:?} '{v}'!")
             };
 
@@ -81,7 +85,6 @@ impl Parser {
         let mut result = self.term()?;
 
         while let Some(token) = self.current_token.clone() {
-            dbg!(&token);
             if !['+', '-'].map(|c| String::from(c)).contains(&token.value) {
                 break;
             }
