@@ -64,3 +64,74 @@ impl Lexer {
         Some(Token { _type, value })
     }
 }
+
+
+#[test]
+fn tokenize_digit() {
+    let mut lexer = Lexer::new(&"2");
+
+    assert_eq!(
+        lexer.next_token(), 
+        Some(Token { _type: TokenType::Number, value: "2".to_string()} )
+    );
+}
+
+#[test]
+fn tokenize_number() {
+    let mut lexer = Lexer::new(&"123");
+
+    assert_eq!(
+        lexer.next_token(), 
+        Some(Token { _type: TokenType::Number, value: "123".to_string()} )
+    );
+}
+
+#[test]
+fn tokenize_lparen() {
+    let mut lexer = Lexer::new(&"(");
+
+    assert_eq!(
+        lexer.next_token(),
+        Some(Token { _type: TokenType::LParen, value: "(".to_string() })
+    );
+}
+
+#[test]
+fn tokenize_rparen() {
+    let mut lexer = Lexer::new(&")");
+
+    assert_eq!(
+        lexer.next_token(),
+        Some(Token { _type: TokenType::RParen, value: ")".to_string() })
+    );
+}
+
+#[test]
+#[should_panic(expected="[lexer] Неизвестный символ '@' на позиции 0!")]
+fn unexpected_token() {
+    let mut lexer = Lexer::new(&"@");
+    lexer.next_token();
+}
+
+#[test]
+fn tokenize_operators() {
+    let code = &"*/+-";
+    let mut lexer = Lexer::new(code);
+
+    for ch in code.chars() {
+        assert_eq!(
+            lexer.next_token(),
+            Some(Token{ _type: TokenType::Operator, value: ch.to_string() })
+        );
+    }
+}
+
+#[test]
+fn skip_spaces() {
+    let code = &"  1  ";
+    let mut lexer = Lexer::new(code);
+    
+    while let Some(token) = lexer.next_token() {
+        assert_eq!(token, Token { _type: TokenType::Number, value: "1".to_string() })
+    }
+}

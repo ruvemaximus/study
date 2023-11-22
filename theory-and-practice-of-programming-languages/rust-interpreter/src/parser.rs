@@ -4,7 +4,7 @@ mod lexer;
 use lexer::{Token, TokenType, Lexer};
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ASTNode {
     Number(i32),
     BinOp { left: Box<Self>, op: String, right: Box<Self> }
@@ -27,7 +27,7 @@ impl Parser {
     fn check_token(&mut self, expected: TokenType) {
         if let Some(token) = &self.current_token {
             if token._type != expected {
-                panic!("[grammar] Ожидался токен {expected:?}, получен {token:?}")
+                panic!("[grammar] Ожидался токен c типом {:?}, получен тип {:?}", expected, token._type)
             }
             self.step()
         }
@@ -73,9 +73,9 @@ impl Parser {
             self.step();
 
             result = ASTNode::BinOp { 
-                left: Box::new(self.term()?), 
+                left: Box::new(result), 
                 op: token.value, 
-                right: Box::new(result)
+                right: Box::new(self.term()?)
             };
         }
         Some(result)
@@ -96,9 +96,9 @@ impl Parser {
             self.step();
 
             result = ASTNode::BinOp { 
-                left: Box::new(self.expr()?), 
+                left: Box::new(result), 
                 op: token.value, 
-                right: Box::new(result)
+                right: Box::new(self.expr()?)
             };
         }
 
@@ -112,9 +112,73 @@ impl Parser {
 
 
 #[test]
-fn fact() {
-    let _parser = Parser::new(&"2+2+2");
-    assert_eq!(1, 1);
+fn expr_plus_term_grammar() {
+    let mut parser = Parser::new(&"2+2");
+
+    assert_eq!(
+        parser.parse().unwrap(),
+        ASTNode::BinOp { 
+            left: Box::new(ASTNode::Number(2)), 
+            op: "+".to_string(), 
+            right: Box::new(ASTNode::Number(2))
+        }
+    );
 }
 
+#[test]
+fn fact_grammar() {
+    let mut parser = Parser::new(&"2");
 
+    assert_eq!(
+        parser.parse().unwrap(),
+        ASTNode::Number(2)
+    )
+}
+
+#[test]
+fn term_grammar() {
+    let mut parser = Parser::new(&"2*2");
+
+    assert_eq!(
+        parser.parse().unwrap(),
+        ASTNode::BinOp {
+            left: Box::new(ASTNode::Number(2)),
+            op: "*".to_string(),
+            right: Box::new(ASTNode::Number(2))
+        }
+    )
+}
+
+#[test]
+fn expr_grammar() {
+    let mut parser = Parser::new(&"2+2");
+
+    assert_eq!(
+        parser.parse().unwrap(),
+        ASTNode::BinOp {
+            left: Box::new(ASTNode::Number(2)),
+            op: "+".to_string(),
+            right: Box::new(ASTNode::Number(2))
+        }
+    )
+}
+
+#[test]
+fn empty_code() {
+    let mut parser = Parser::new(&"");
+    assert_eq!(None, parser.parse());
+}
+
+#[test]
+#[should_panic(expected="[grammar] Неожиданный токен RParen ')'!")]
+fn unexpected_token() {
+    let mut parser = Parser::new(&")");
+    parser.parse();
+}
+
+#[test]
+#[should_panic(expected="[grammar] Ожидался токен c типом RParen, получен тип LParen")]
+fn check_token_failure() {
+    let mut parser = Parser::new(&"2+(2+2(");
+    parser.parse();
+}

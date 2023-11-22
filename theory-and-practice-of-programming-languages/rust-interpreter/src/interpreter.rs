@@ -12,9 +12,9 @@ fn visit(node: &ASTNode) -> i32 {
                 "/" => visit(left) / visit(right),
                 "+" => visit(left) + visit(right),
                 "-" => visit(left) - visit(right),
-                op @ _ => {
-                    panic!("[interpreter] Неожиданная операция '{op}'")
-                }
+                // Это неизвестный оператор или ошибка в грамматике, на это ругнется `lexer` или
+                // `parser` соответственно
+                _ => unreachable!()
             }
         }
     }
@@ -24,5 +24,39 @@ pub fn eval(code: &str) -> i32 {
     let mut parser = Parser::new(code);
 
     visit(&parser.parse().unwrap())
+}
+
+
+#[test]
+fn eval_sum() {
+    assert_eq!(eval("2+3"), 5);
+}
+
+#[test]
+fn eval_sub() {
+    assert_eq!(eval("3-1"), 2);
+}
+
+#[test]
+fn eval_div() {
+    let result = eval(&"10/2");
+    assert_eq!(result, 5);
+}
+
+#[test]
+fn eval_complex_expression() {
+    let result = eval("2 * (3 + 4) - 5");
+    assert_eq!(result, 9);
+}
+
+#[test]
+fn eval_mul() {
+    let result = eval(&"10*2");
+    assert_eq!(result, 20);
+}
+
+#[test]
+fn number() {
+    assert_eq!(eval("2"), 2);
 }
 
