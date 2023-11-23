@@ -7,7 +7,8 @@ use lexer::{Token, TokenType, Lexer};
 #[derive(Debug, PartialEq)]
 pub enum ASTNode {
     Number(i32),
-    BinOp { left: Box<Self>, op: String, right: Box<Self> }
+    BinOp { left: Box<Self>, op: String, right: Box<Self> },
+    UnaryOp { op: String, value: Box<Self> }
 }
 
 pub struct Parser {
@@ -46,10 +47,23 @@ impl Parser {
                 },
                 TokenType::LParen => {
                     self.check_token(TokenType::LParen);
-                    let expression = self.expr()?;
+                    let expression = self.expr().unwrap();
                     self.check_token(TokenType::RParen);
                     expression
                 },
+                TokenType::Operator => {
+                    if !['-', '+'].map(|c| String::from(c)).contains(&v) {
+                        panic!("[grammar] Неожиданный оператор '{v}'!");
+                    }
+                    self.check_token(TokenType::Operator);
+                    self.check_token(TokenType::LParen);
+                    let expression = self.expr().unwrap();
+                    self.check_token(TokenType::RParen);
+                    ASTNode::UnaryOp { 
+                        op: v.to_string(), 
+                        value: Box::new(expression) 
+                    }
+                }
                 _ => panic!("[grammar] Неожиданный токен {t:?} '{v}'!")
             };
 
@@ -75,7 +89,7 @@ impl Parser {
             result = ASTNode::BinOp { 
                 left: Box::new(result), 
                 op: token.value, 
-                right: Box::new(self.term()?)
+                right: Box::new(self.term().unwrap())
             };
         }
         Some(result)
@@ -98,7 +112,7 @@ impl Parser {
             result = ASTNode::BinOp { 
                 left: Box::new(result), 
                 op: token.value, 
-                right: Box::new(self.expr()?)
+                right: Box::new(self.expr().unwrap())
             };
         }
 
@@ -126,7 +140,19 @@ fn expr_plus_term_grammar() {
 }
 
 #[test]
-fn fact_grammar() {
+#[should_panic]
+fn parse_expr_failed() {
+    Parser::new("2+").parse();
+}
+
+#[test]
+#[should_panic]
+fn parse_term_failed() {
+    Parser::new("2*").parse();
+}
+
+#[test]
+fn fact_grammar_number() {
     let mut parser = Parser::new(&"2");
 
     assert_eq!(
@@ -136,7 +162,40 @@ fn fact_grammar() {
 }
 
 #[test]
-fn term_grammar() {
+fn fact_grammar_unary_op_negative() {
+    let mut parser = Parser::new(&"-(2)");
+
+    assert_eq!(
+        parser.parse().unwrap(),
+        ASTNode::UnaryOp { 
+            op: "-".to_string(), 
+            value: Box::new(ASTNode::Number(2))
+        }
+    )
+}
+
+#[test]
+fn fact_grammar_unary_op_positive() {
+    let mut parser = Parser::new(&"+(2)");
+
+    assert_eq!(
+        parser.parse().unwrap(),
+        ASTNode::UnaryOp { 
+            op: "+".to_string(), 
+            value: Box::new(ASTNode::Number(2))
+        }
+    )
+}
+
+#[test]
+#[should_panic(expected="[grammar] Неожиданный оператор '*'!")]
+fn fact_grammar_unary_op_failure() {
+    let mut parser = Parser::new(&"*(2)");
+    parser.parse();
+}
+
+#[test]
+fn term_grammar_mul_binary_op() {
     let mut parser = Parser::new(&"2*2");
 
     assert_eq!(
@@ -150,7 +209,7 @@ fn term_grammar() {
 }
 
 #[test]
-fn expr_grammar() {
+fn expr_grammar_plus_binary_op() {
     let mut parser = Parser::new(&"2+2");
 
     assert_eq!(
@@ -178,7 +237,7 @@ fn unexpected_token() {
 
 #[test]
 #[should_panic(expected="[grammar] Ожидался токен c типом RParen, получен тип LParen")]
-fn check_token_failure() {
+fn fact_grammar_unexpected_token() {
     let mut parser = Parser::new(&"2+(2+2(");
     parser.parse();
 }

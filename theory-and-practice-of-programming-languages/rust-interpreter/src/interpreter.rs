@@ -1,5 +1,6 @@
 #[path = "parser.rs"]
 mod parser;
+
 use parser::{Parser, ASTNode};
 
 
@@ -16,6 +17,13 @@ fn visit(node: &ASTNode) -> i32 {
                 // `parser` соответственно
                 _ => unreachable!()
             }
+        },
+        ASTNode::UnaryOp { op, value } => {
+            match op.as_str() {
+                "+" => visit(value),
+                "-" => -visit(value),
+                _ => unreachable!()
+            }
         }
     }
 }
@@ -24,6 +32,17 @@ pub fn eval(code: &str) -> i32 {
     let mut parser = Parser::new(code);
 
     visit(&parser.parse().unwrap())
+}
+
+
+#[test]
+fn eval_unary_op_positive() {
+    assert_eq!(eval("+(2)"), 2);
+}
+
+#[test]
+fn eval_unary_op_negative() {
+    assert_eq!(eval("-(2)"), -2);
 }
 
 
