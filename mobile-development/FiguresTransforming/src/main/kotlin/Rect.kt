@@ -1,25 +1,29 @@
-// сочетание определения класса и конструктора одновременно объявляет переменные и задаёт их значения
-class Rect(var x: Int, var y: Int, val width: Int, val height: Int) : Movable, Transforming, Figure(0) {
-    var color: Int = -1 // при объявлении каждое поле нужно инициализировать
-
-    lateinit var name: String
-    // значение на момент определения неизвестно (только для объектных типов)
-    // дополнительный конструктор вызывает основной
-    constructor(rect: Rect) : this(rect.x, rect.y, rect.width, rect.height)
-
-    override fun move(dx: Int, dy: Int) {
-        x += dx; y += dy
+class Rect(
+    private var topLeftCord: Point, private var width: Int, private var height: Int
+) : Figure(0) {
+    override fun move(to: Point) {
+        topLeftCord = topLeftCord.move(to)
     }
 
     override fun area(): Float {
-        return (width*height).toFloat()
+        return (width * height).toFloat()
     }
 
     override fun resize(zoom: Int) {
-        TODO("Not yet implemented")
+        width *= zoom
+        height *= zoom
     }
 
-    override fun rotate(direction: RotateDirection, centerX: Int, centerY: Int) {
-        TODO("Not yet implemented")
+    override fun rotate(direction: RotateDirection, rotationCenter: Point) {
+        topLeftCord = when (direction) {
+            RotateDirection.Clockwise -> Point(x = topLeftCord.x, y = topLeftCord.y - height)
+            RotateDirection.CounterClockwise -> Point(x = topLeftCord.x + width, y = topLeftCord.y)
+        }
+        topLeftCord = topLeftCord.rotate(direction, rotationCenter)
+        width = height.also { height = width }
+    }
+
+    override fun toString(): String {
+        return "Rect<top-left-point: $topLeftCord, width: $width, height: $height>"
     }
 }
