@@ -17,7 +17,7 @@ impl Lexer {
         }
     }
 
-    fn builder(&mut self, init_value: &char, range: Range<char>) -> String {
+    fn build_until_space(&mut self, init_value: &char, range: Range<char>) -> String {
         let mut value = String::from(*init_value);
 
         while let Some(ch) = self.chars.get(self.pos + 1) {
@@ -29,15 +29,39 @@ impl Lexer {
         value
     }
 
+    fn expect_chars(&mut self, init_value: &char, expected: String) -> String {
+        let mut value = String::from(*init_value);
+
+        for expected_char in expected.chars() {
+            self.pos += 1;
+            let ch = *self.chars.get(self.pos).unwrap();
+
+            if ch == ' ' {
+                continue;
+            }
+
+            if !(ch == expected_char) {
+                panic!("[lexer] Ожидался символ '{expected_char}' на позиции {}, получен '{ch}'!", self.pos)
+            }
+
+            value.push(ch);
+        }
+        
+        value
+    }
+
     pub fn next_token(&mut self) -> Option<Token> {
         let ch: char = *self.chars.get(self.pos)?;
 
         let (_type, value) = match ch {
             '0'..='9' => (
                 TokenType::Number, 
-                self.builder(&ch, Range { start: '0', end: '9' })
+                self.build_until_space(&ch, Range { start: '0', end: '9' })
             ),
-
+            'a'..='z' => (
+                TokenType::ID,
+                self.build_until_space(&ch, Range { start: 'a', end: 'z' })
+            ),
             '*' | '/' | '+' | '-' => (
                 TokenType::Operator, 
                 String::from(ch)
@@ -51,7 +75,22 @@ impl Lexer {
                 TokenType::RParen, 
                 String::from(ch)
             ),
-
+            ';' => (
+                TokenType::SEMI,
+                String::from(ch)
+            ),
+            ':' => (
+                TokenType::Assign, 
+                self.expect_chars(&ch, String::from("="))
+            ),
+            'B' => (
+                TokenType::Begin, 
+                self.expect_chars(&ch, String::from("EGIN"))
+            ),
+            'E' => (
+                TokenType::End, 
+                self.expect_chars(&ch, String::from("ND."))
+            ),
             ' ' => {
                 self.pos += 1;
                 return self.next_token()
@@ -74,6 +113,51 @@ fn tokenize_digit() {
         lexer.next_token(), 
         Some(Token { _type: TokenType::Number, value: "2".to_string()} )
     );
+}
+
+#[test]
+fn tokenize_assign() {
+    let mut lexer = Lexer::new(&":=");
+
+    assert_eq!(
+        lexer.next_token(), 
+        Some(Token { _type: TokenType::Assign, value: ":=".to_string()} )
+    );
+}
+
+#[test]
+fn tokenize_begin() {
+    let mut lexer = Lexer::new(&"BEGIN");
+
+    assert_eq!(
+        lexer.next_token(),
+        Some(Token { _type: TokenType::Begin, value: "BEGIN".to_string()} )
+    );
+}
+
+#[test]
+fn tokenize_end() {
+    let mut lexer = Lexer::new(&"END.");
+    assert_eq!(
+        lexer.next_token(),
+        Some(Token { _type: TokenType::End, value: "END.".to_string()} )
+    );
+}
+
+#[test]
+fn tokenize_id() {
+    let mut lexer = Lexer::new(&"x");
+    assert_eq!(
+        lexer.next_token(),
+        Some(Token { _type: TokenType::ID, value: "x".to_string()} )
+    );
+}
+
+#[test]
+#[should_panic(expected="[lexer] Ожидался символ '=' на позиции 1, получен ':'!")]
+fn unexpected_char() {
+    let mut lexer = Lexer::new(&"::");
+    lexer.next_token();
 }
 
 #[test]
@@ -127,7 +211,7 @@ fn tokenize_operators() {
 }
 
 #[test]
-fn skip_spaces() {
+fn ignore_spaces() {
     let code = &"  1  ";
     let mut lexer = Lexer::new(code);
     

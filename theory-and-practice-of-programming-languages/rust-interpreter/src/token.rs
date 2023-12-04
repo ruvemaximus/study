@@ -4,6 +4,11 @@ pub enum TokenType {
     Operator,
     LParen,
     RParen,
+    Assign,
+    Begin,
+    End, 
+    ID,
+    SEMI
 }
 
 #[derive(Debug, PartialEq, Clone)]
