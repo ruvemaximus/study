@@ -1,9 +1,11 @@
 #![allow(dead_code)]
-mod widget;
-use regex::Regex;
-pub use widget::Widget;
-pub use std::any::type_name;
 use std::fmt::Debug;
+use regex::Regex;
+
+mod widget;
+pub use widget::Widget;
+
+
 
 enum Alignment {
     Horizontal,
@@ -26,40 +28,46 @@ widget!(ComboBox, items: Vec<String>);
 
 
 fn from_binary(source: &String) -> Box<dyn Widget> {
-    let re = Regex::new(r#"\{"name":"(\w+)",((?:"\w+":(?:"?[\w !?.]+"?|\[(?:"\w",? ?)*\]),)+)"children":\[(\{.*\})?\]\}"#).unwrap();
+    let re = Regex::new(r#"\{"name":"(\w+)",((?:"\w+":[\w\s\[\]",]+,)+)"children":\[(\{.*\})?\]\}"#).unwrap();
     let capt = re.captures(source).unwrap();
 
     let name = &capt[1];
     let attrs = &capt[2];
     let mut widget: Box<dyn Widget> = match name {
         "Window" => {
-            let re = Regex::new(r#""title":"([\w !?.]+)","#).unwrap();
-            let c = re.captures(attrs).unwrap();
-            Box::new(Window::new(c[1].to_string()))
+            let re = Regex::new(r#"^"title":"([\w\s]+)",$"#).unwrap();
+            let (_, [title]) = re.captures(attrs).unwrap().extract();
+
+            Box::new(Window::new(title.to_string()))
         }
         "Layout" => {
-            let re = Regex::new(r#""alignment":(\d+),"#).unwrap();
-            let c = re.captures(attrs).unwrap();
-        
-            Box::new(Layout::new(match &c[1] {
-                "2" => Alignment::Vertical,
+            let re = Regex::new(r#"^"alignment":(\d+),$"#).unwrap();
+            let (_, [alignment]) = re.captures(attrs).unwrap().extract();
+
+            let alignment = match alignment {
                 "1" => Alignment::Horizontal,
+                "2" => Alignment::Vertical,
                 _ => unreachable!()
-            }))
+            };
+        
+            Box::new(Layout::new(alignment))
         }
         "LineEdit" => {
-            let re = Regex::new(r#""max_length":(\d+),"#).unwrap();
-            let c = re.captures(attrs).unwrap();
+            let re = Regex::new(r#"^"max_length":(\d+),$"#).unwrap();
+            let (_, [max_length]) = re.captures(attrs).unwrap().extract(); 
         
-            Box::new(LineEdit::new(c[1].parse().unwrap()))
+            Box::new(LineEdit::new(max_length.parse().unwrap()))
         }
         "ComboBox" => {
-            let re = Regex::new(r#""items":(\[(?:".+")+\])"#).unwrap();
-            let c = re.captures(attrs).unwrap();
+            let re = Regex::new(r#"^"items":\[(.*)\],$"#).unwrap();
+            let (_, [items]) = re.captures(attrs).unwrap().extract();
 
-            let re_for_replace = Regex::new(r#"["\[\] ]"#).unwrap();
+            let re_for_replace = Regex::new(r#"[" ]"#).unwrap();
 
-            let items = c[1].split(',').map(|s| {re_for_replace.replace_all(s, "").to_string()}).collect();
+            let items = items
+                .split(',')
+                .map(|s| { re_for_replace.replace_all(s, "").to_string() })
+                .collect();
         
             Box::new(ComboBox::new(items))
         }
@@ -89,8 +97,13 @@ fn main() {
 
     app.add_child(Box::new(v_layout));
     app.add_child(Box::new(h_layout));
+
     
     dbg!(&app);
-    println!("{}", app.to_binary());
     dbg!(from_binary(&mut app.to_binary()));
+
+    assert_eq!(
+        &app.to_binary(),
+        &from_binary(&mut app.to_binary()).to_binary()
+    )
 }
