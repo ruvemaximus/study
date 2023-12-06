@@ -28,10 +28,18 @@ macro_rules! widget {
                 self.children.push(child);
             }
             fn to_binary(&self) -> String {
-                let mut result = String::from("");
-                for child in self.children.iter() {
-                    result.push_str(&child.to_binary());
-                }
+                let mut result = String::new();
+
+                result.push_str(&format!("{{\"name\":\"{}\",", stringify!($struct_name)));
+                $( 
+                    result.push_str(&format!("\"{}\":{:?},", stringify!($field), self.$field)); 
+                )*
+                result.push_str(&format!("\"children\":[{}]}}", 
+                    &self.children.iter()
+                        .map(|it| it.to_binary())
+                        .collect::<Vec<String>>()
+                        .join(",")
+                ));
                 result
             }
         }
