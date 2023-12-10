@@ -25,7 +25,6 @@ impl Lexer {
             value.push(*ch);
             self.pos += 1;
         }
-
         value
     }
 
@@ -34,13 +33,14 @@ impl Lexer {
 
         for expected_char in expected.chars() {
             self.pos += 1;
-            let ch = *self.chars.get(self.pos).unwrap();
+            let mut ch = *self.chars.get(self.pos).unwrap();
 
-            if ch == ' ' {
-                continue;
+            while ch == ' ' {
+                self.pos += 1;
+                ch = *self.chars.get(self.pos).unwrap();
             }
 
-            if !(ch == expected_char) {
+            if ch != expected_char {
                 panic!("[lexer] Ожидался символ '{expected_char}' на позиции {}, получен '{ch}'!", self.pos)
             }
 
@@ -79,6 +79,10 @@ impl Lexer {
                 TokenType::SEMI,
                 String::from(ch)
             ),
+            '.' => (
+                TokenType::Dot,
+                String::from(ch)
+            ),
             ':' => (
                 TokenType::Assign, 
                 self.expect_chars(&ch, String::from("="))
@@ -89,9 +93,9 @@ impl Lexer {
             ),
             'E' => (
                 TokenType::End, 
-                self.expect_chars(&ch, String::from("ND."))
+                self.expect_chars(&ch, String::from("ND"))
             ),
-            ' ' => {
+            ' ' | '\n' => {
                 self.pos += 1;
                 return self.next_token()
             },
@@ -126,6 +130,16 @@ fn tokenize_assign() {
 }
 
 #[test]
+fn tokenize_dot() {
+    let mut lexer = Lexer::new(&".");
+
+    assert_eq!(
+        lexer.next_token(), 
+        Some(Token { _type: TokenType::Dot, value: ".".to_string()} )
+    );
+}
+
+#[test]
 fn tokenize_begin() {
     let mut lexer = Lexer::new(&"BEGIN");
 
@@ -137,10 +151,10 @@ fn tokenize_begin() {
 
 #[test]
 fn tokenize_end() {
-    let mut lexer = Lexer::new(&"END.");
+    let mut lexer = Lexer::new(&"END");
     assert_eq!(
         lexer.next_token(),
-        Some(Token { _type: TokenType::End, value: "END.".to_string()} )
+        Some(Token { _type: TokenType::End, value: "END".to_string()} )
     );
 }
 

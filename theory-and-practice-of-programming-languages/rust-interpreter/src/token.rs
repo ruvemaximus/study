@@ -8,7 +8,8 @@ pub enum TokenType {
     Begin,
     End, 
     ID,
-    SEMI
+    SEMI,
+    Dot,
 }
 
 #[derive(Debug, PartialEq, Clone)]
