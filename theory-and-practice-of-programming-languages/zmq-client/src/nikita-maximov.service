@@ -1,0 +1,16 @@
+[Unit]
+Description=Arduino service
+After=network.target
+
+[Service]
+ExecStart=./zmq-client
+WorkingDirectory=/home/user/maximov/
+Type=simple
+Restart=always
+RestartSec=10
+StandardOutput=null
+
+User=user
+
+[Install]
+WantedBy=multi-user.target
