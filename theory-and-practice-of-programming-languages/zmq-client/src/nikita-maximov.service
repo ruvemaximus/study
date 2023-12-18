@@ -3,7 +3,7 @@ Description=Arduino service
 After=network.target
 
 [Service]
-ExecStart=./zmq-client
+ExecStart=/home/user/maximov/zmq-client
 WorkingDirectory=/home/user/maximov/
 Type=simple
 Restart=always
